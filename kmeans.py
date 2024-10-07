@@ -1,5 +1,7 @@
+import time
 import numpy as np
 from joblib import Parallel, delayed
+import os
 
 class KMeans:
     def __init__(self, n_clusters=3, max_iter=300, tol=1e-4, n_jobs=1):
@@ -39,6 +41,8 @@ class KMeans:
             """
             Calcola le distanze tra un chunk di punti dati e i centroidi, restituendo l'indice del centroide più vicino.
             """
+            processId = os.getpid()
+            print(f"Process ID: {processId}, chunk size: {len(chunk)}")
             distances_chunk = np.linalg.norm(chunk[:, np.newaxis] - self.centroids, axis=2)
             return np.argmin(distances_chunk, axis=1)
         
@@ -141,17 +145,23 @@ def train_test_split(X, y=None, train_size=0.8, random_seed=None):
     
 if __name__ == "__main__":
     # Genera 1000 punti in un dataset con 2 caratteristiche e 3 cluster
-    X, true_labels = generateData(n_samples=1000, n_features=2, n_clusters=3, cluster_std=2, random_seed=42)
+    X, true_labels = generateData(n_samples=1000000, n_features=2, n_clusters=3, cluster_std=2, random_seed=42)
     
     # Suddivide i dati in train e test (80%-20%)
-    X_train, X_test, y_train, y_test = train_test_split(X, true_labels, train_size=0.8, random_seed=42)
+    X_train, X_test, y_train, y_test = train_test_split(X, true_labels, train_size=1, random_seed=42)
     
     # Crea l'oggetto KMeans con 3 cluster
-    kmeans = KMeans(n_clusters=3)
+    kmeans = KMeans(n_clusters=3, n_jobs=10)
     
+    start_time = time.time()
+
     # Addestra il modello
     kmeans.fit(X_train)
     
+    duration = time.time() - start_time
+
+    print("durata: "+str(duration))
+
     # Stampa i centroidi
     print("Centroidi:", kmeans.centroids)
     
