@@ -71,19 +71,65 @@ def generateData(n_samples=1000, n_features=2, n_clusters=3, cluster_std=1.0, ra
     
     return X, true_labels
 
+def train_test_split(X, y=None, train_size=0.8, random_seed=None):
+    """
+    Suddivide i dati X (e opzionalmente le etichette y) in insiemi di train e test.
+    
+    Parametri:
+    - X: Array dei dati (n_samples, n_features).
+    - y: Etichette associate ai dati, se presenti.
+    - train_size: Percentuale di dati da usare per il train (default: 0.8 per l'80%).
+    - random_seed: Semina casuale per ottenere una suddivisione ripetibile.
+    
+    Restituisce:
+    - X_train: Dati di addestramento.
+    - X_test: Dati di test.
+    - y_train: Etichette di addestramento (se y è fornito).
+    - y_test: Etichette di test (se y è fornito).
+    """
+    if random_seed is not None:
+        np.random.seed(random_seed)
+    
+    # Numero totale di campioni
+    n_samples = X.shape[0]
+    
+    # Genera un array di indici casuali
+    indices = np.random.permutation(n_samples)
+    
+    # Determina il numero di campioni di train
+    train_size = int(train_size * n_samples)
+    
+    # Separa gli indici per train e test
+    train_indices = indices[:train_size]
+    test_indices = indices[train_size:]
+    
+    # Suddividi i dati
+    X_train = X[train_indices]
+    X_test = X[test_indices]
+    
+    if y is not None:
+        y_train = y[train_indices]
+        y_test = y[test_indices]
+        return X_train, X_test, y_train, y_test
+    else:
+        return X_train, X_test
+    
 if __name__ == "__main__":
     # Genera 1000 punti in un dataset con 2 caratteristiche e 3 cluster
     X, true_labels = generateData(n_samples=1000, n_features=2, n_clusters=3, cluster_std=2, random_seed=42)
+    
+    # Suddivide i dati in train e test (80%-20%)
+    X_train, X_test, y_train, y_test = train_test_split(X, true_labels, train_size=0.8, random_seed=42)
     
     # Crea l'oggetto KMeans con 3 cluster
     kmeans = KMeans(n_clusters=3)
     
     # Addestra il modello
-    kmeans.fit(X)
+    kmeans.fit(X_train)
     
     # Stampa i centroidi
     print("Centroidi:", kmeans.centroids)
     
     # Assegna i cluster ai punti di dati
-    labels = kmeans.predict(X)
+    labels = kmeans.predict(X_test)
     print("Etichette:", labels)
