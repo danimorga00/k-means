@@ -15,6 +15,7 @@ class KMeans:
         self.centroids = X[np.random.choice(X.shape[0], self.n_clusters, replace=False)]
 
         for i in range(self.max_iter):
+            print(f"iterazione: {i}")
             # Assegna ogni punto dati al cluster più vicino
             self.labels = self._assign_clusters_parallel(X)
             
@@ -60,8 +61,14 @@ class KMeans:
         return np.concatenate(labels)
     
     def _compute_centroids(self, X):
-        # Calcola i nuovi centroidi come media dei punti assegnati a ciascun cluster
-        return np.array([X[self.labels == i].mean(axis=0) for i in range(self.n_clusters)])
+        # Funzione per calcolare la media dei punti assegnati a ciascun cluster
+        def compute_single_centroid(i):
+            return X[self.labels == i].mean(axis=0)
+
+        # Parallelizza il calcolo dei centroidi per ogni cluster
+        centroids = Parallel(n_jobs=self.n_jobs)(delayed(compute_single_centroid)(i) for i in range(self.n_clusters))
+
+        return np.array(centroids)
 
     def predict(self, X):
         # Restituisce l'indice del cluster più vicino per i nuovi dati
@@ -143,28 +150,3 @@ def train_test_split(X, y=None, train_size=0.8, random_seed=None):
     else:
         return X_train, X_test
     
-if __name__ == "__main__":
-    # Genera 1000 punti in un dataset con 2 caratteristiche e 3 cluster
-    X, true_labels = generateData(n_samples=1000000, n_features=2, n_clusters=3, cluster_std=2, random_seed=42)
-    
-    # Suddivide i dati in train e test (80%-20%)
-    X_train, X_test, y_train, y_test = train_test_split(X, true_labels, train_size=1, random_seed=42)
-    
-    # Crea l'oggetto KMeans con 3 cluster
-    kmeans = KMeans(n_clusters=3, n_jobs=10)
-    
-    start_time = time.time()
-
-    # Addestra il modello
-    kmeans.fit(X_train)
-    
-    duration = time.time() - start_time
-
-    print("durata: "+str(duration))
-
-    # Stampa i centroidi
-    print("Centroidi:", kmeans.centroids)
-    
-    # Assegna i cluster ai punti di dati
-    labels = kmeans.predict(X_test)
-    print("Etichette:", labels)
