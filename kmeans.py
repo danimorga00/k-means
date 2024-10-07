@@ -2,7 +2,7 @@ import numpy as np
 from joblib import Parallel, delayed
 
 class KMeans:
-    def __init__(self, n_clusters=3, max_iter=300, tol=1e-4, n_jobs=-1):
+    def __init__(self, n_clusters=3, max_iter=300, tol=1e-4, n_jobs=1):
         self.n_clusters = n_clusters      # Numero di cluster
         self.max_iter = max_iter          # Numero massimo di iterazioni
         self.tol = tol                    # Tolleranza per la convergenza
@@ -62,7 +62,6 @@ class KMeans:
     def predict(self, X):
         # Restituisce l'indice del cluster più vicino per i nuovi dati
         return self._assign_clusters(X)
-import numpy as np
 
 def generateData(n_samples=1000, n_features=2, n_clusters=3, cluster_std=1.0, random_seed=None):
     """
@@ -142,7 +141,7 @@ def train_test_split(X, y=None, train_size=0.8, random_seed=None):
     
 if __name__ == "__main__":
     # Genera 1000 punti in un dataset con 2 caratteristiche e 3 cluster
-    X, true_labels = generateData(n_samples=10000, n_features=2, n_clusters=3, cluster_std=2, random_seed=42)
+    X, true_labels = generateData(n_samples=1000, n_features=2, n_clusters=3, cluster_std=2, random_seed=42)
     
     # Suddivide i dati in train e test (80%-20%)
     X_train, X_test, y_train, y_test = train_test_split(X, true_labels, train_size=0.8, random_seed=42)
