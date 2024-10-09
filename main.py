@@ -6,21 +6,20 @@ import numpy as np
 from joblib import Parallel, delayed
 import os
 
+from plot import plot_clusters
+
 
 if __name__ == "__main__":
-    # Genera 1000 punti in un dataset con 2 caratteristiche e 3 cluster
-    X, true_labels = generateData(n_samples=2000000, n_features=2, n_clusters=5, cluster_std=2, random_seed=42)
+    X, true_labels, centroids = generateData(n_samples=2000000, n_features=2, n_clusters=5, cluster_std=1)
     
-    # Suddivide i dati in train e test (80%-20%)
-    X_train, X_test, y_train, y_test = train_test_split(X, true_labels, train_size=1, random_seed=42)
+    # Suddivide i dati in train e test
+    X_train, X_test, y_train, y_test = train_test_split(X, true_labels, train_size=0.5, random_seed=42)
     
-    # Crea l'oggetto KMeans con 3 cluster
-    kmeansSeq = KMeans(n_clusters=5, n_jobs=1)
-    kmeansPar = KMeans(n_clusters=5, n_jobs=10)
+    kmeansSeq = KMeans(n_clusters=5, assign_jobs=1, compute_jobs=1)
+    kmeansPar = KMeans(n_clusters=5, assign_jobs=20, compute_jobs=20)
     
     start_time = time.time()
 
-    # Addestra il modello
     kmeansSeq.fit(X_train)
     
     duration1 = time.time() - start_time
@@ -29,7 +28,6 @@ if __name__ == "__main__":
 
     start_time = time.time()
 
-    # Addestra il modello
     kmeansPar.fit(X_train)
     
     duration2 = time.time() - start_time
@@ -38,9 +36,10 @@ if __name__ == "__main__":
 
     print("Speedup: "+str(duration1/duration2))
 
-    # Stampa i centroidi
-    #print("Centroidi:", kmeans.centroids)
-    
-    # Assegna i cluster ai punti di dati
-    #labels = kmeans.predict(X_test)
-    #print("Etichette:", labels)
+    """
+    y_preds = kmeansSeq.predict(X_test)
+    y_predp = kmeansPar.predict(X_test)
+    plot_clusters(X_test, y_preds, kmeansSeq.centroids, "sequenziale")
+    plot_clusters(X_test, y_predp, kmeansPar.centroids, "parallela")
+    plot_clusters(X_test, y_predp, centroids, "parallela")
+    """
