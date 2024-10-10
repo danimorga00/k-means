@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import pandas as pd
 
 # Supponiamo di avere già:
 # - X: i punti dati (2D)
@@ -28,3 +29,23 @@ def plot_clusters(X, labels, centroids, title):
     plt.legend()
     plt.grid(True)
     plt.show()
+
+def plotColumn(file):
+    # Leggi il CSV
+    df = pd.read_csv(file)
+
+    # Scegli la colonna da plottare (ad esempio, 'colonna1')
+    colonna = df['speedup']
+
+    # Crea il grafico
+    plt.plot(colonna)
+
+    # Etichetta gli assi e il titolo
+    plt.xlabel('Indice')
+    plt.ylabel('Valori')
+    plt.title('Grafico della colonna 1')
+
+    # Mostra il grafico
+    plt.show()
+
+#plotColumn("report2_2024-10-09")

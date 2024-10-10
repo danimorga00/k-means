@@ -5,33 +5,33 @@ from joblib import Parallel, delayed
 import os
 
 class KMeans:
-    def __init__(self, n_clusters=3, max_iter=300, tol=1e-4, assign_jobs=1, compute_jobs=1):
+    def __init__(self, X, n_clusters=3, max_iter=300, tol=1e-4, assign_jobs=1, compute_jobs=1):
         self.n_clusters = n_clusters      # Numero di cluster
         self.max_iter = max_iter          # Numero massimo di iterazioni
         self.tol = tol                    # Tolleranza per la convergenza
         self.assign_jobs = assign_jobs
         self.compute_jobs = compute_jobs
+        self.X = X
+        self.initialCentroids = self.X[np.random.choice(self.X.shape[0], self.n_clusters, replace=False)]
+        self.centroids = self.initialCentroids
 
-    def fit(self, X):
-        self.centroids = X[np.random.choice(X.shape[0], self.n_clusters, replace=False)]
+    def fit(self):
 
         for i in range(self.max_iter):
-            print(f"iterazione: {i}")
-
-            self.labels = self._assign_clusters_parallel(X)
+            self.labels = self._assign_clusters_parallel()
             
-            new_centroids = self._compute_centroids(X)
+            new_centroids = self._compute_centroids()
             
             if np.all(np.linalg.norm(self.centroids - new_centroids, axis=1) < self.tol):
                 break
                 
             self.centroids = new_centroids
 
-    def _assign_clusters(self, X):
-        distances = np.linalg.norm(X[:, np.newaxis] - self.centroids, axis=2)
+    def _assign_clusters(self):
+        distances = np.linalg.norm(self.X[:, np.newaxis] - self.centroids, axis=2)
         return np.argmin(distances, axis=1)
     
-    def _assign_clusters_parallel(self, X):
+    def _assign_clusters_parallel(self):
         """
         Parallelizza il calcolo delle distanze tra i punti dati e i centroidi e l'assegnazione ai cluster.
         """
@@ -40,30 +40,41 @@ class KMeans:
             Calcola le distanze tra un chunk di punti dati e i centroidi, restituendo l'indice del centroide più vicino.
             """
             processId = threading.get_ident()
-            print(f"Process ID: {processId}, chunk size: {len(chunk)}")
+            #print(f"Process ID: {processId}, chunk size: {len(chunk)}")
             distances_chunk = np.linalg.norm(chunk[:, np.newaxis] - self.centroids, axis=2)
             return np.argmin(distances_chunk, axis=1)
         
-        n_samples = X.shape[0]
+        n_samples = self.X.shape[0]
         chunk_size = n_samples // self.assign_jobs
         
-        chunks = [X[i:i + chunk_size] for i in range(0, n_samples, chunk_size)]
+        chunks = [self.X[i:i + chunk_size] for i in range(0, n_samples, chunk_size)]
         
         labels = Parallel(n_jobs=self.assign_jobs, backend="threading")(delayed(compute_chunk)(chunk) for chunk in chunks)
         
         return np.concatenate(labels)
     
-    def _compute_centroids(self, X):
+    def _compute_centroids(self):
         
         def compute_single_centroid(i):
-            return X[self.labels == i].mean(axis=0)
+            return self.X[self.labels == i].mean(axis=0)
 
         centroids = Parallel(n_jobs=self.compute_jobs, backend="threading")(delayed(compute_single_centroid)(i) for i in range(self.n_clusters))
 
         return np.array(centroids)
 
-    def predict(self, X):
-        return self._assign_clusters(X)
+    def predict(self):
+        return self._assign_clusters(self.X)
+    
+    def setJobs(self, assign_jobs=1, compute_jobs=1):
+        self.assign_jobs = assign_jobs
+        self.compute_jobs = compute_jobs
+
+    def setData(self, X):
+        self.X = X
+
+    def resetCentroids(self):
+        self.centroids = self.initialCentroids
+
 
 def generateData(n_samples=1000, n_features=2, n_clusters=3, cluster_std=0.1, random_seed=None):
     """
